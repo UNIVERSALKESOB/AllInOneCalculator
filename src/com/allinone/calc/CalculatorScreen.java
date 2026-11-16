@@ -1,11 +1,15 @@
 package com.allinone.calc;
 
+import android.app.AlertDialog;
 import android.content.Context;
 import android.graphics.Typeface;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.LinearLayout;
+import android.widget.ScrollView;
 import android.widget.TextView;
+
+import java.util.List;
 
 public class CalculatorScreen implements Screen {
 
@@ -30,6 +34,7 @@ public class CalculatorScreen implements Screen {
     private static final String[] DEL_SUFFIX = {"sin(", "cos(", "tan(", "log(", "ln(", "√(", "^2", "!"};
 
     private final boolean sci;
+    private final Context ctx;
     private final View root;
     private final StringBuilder buf = new StringBuilder();
     private final TextView exprView;
@@ -40,6 +45,7 @@ public class CalculatorScreen implements Screen {
 
     public CalculatorScreen(Context c, boolean scientific) {
         this.sci = scientific;
+        this.ctx = c;
 
         LinearLayout col = Ui.column(c, 0);
         int p = Ui.dp(c, 14);
@@ -53,7 +59,23 @@ public class CalculatorScreen implements Screen {
         historyView = Ui.text(c, "", 12, Ui.MUTED, false);
         historyView.setGravity(Gravity.END);
         historyView.setSingleLine(true);
-        card.addView(historyView, new LinearLayout.LayoutParams(-1, -2));
+
+        LinearLayout topRow = Ui.row(c);
+        topRow.setGravity(Gravity.CENTER_VERTICAL);
+        TextView historyButton = Ui.text(c, "HISTORY", 10, Ui.ACCENT, true);
+        historyButton.setLetterSpacing(0.08f);
+        historyButton.setPadding(Ui.dp(c, 9), Ui.dp(c, 5), Ui.dp(c, 9), Ui.dp(c, 5));
+        historyButton.setBackground(Ui.roundBg(0xFF14332C, Ui.dp(c, 8)));
+        historyButton.setClickable(true);
+        historyButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                showHistory();
+            }
+        });
+        topRow.addView(historyButton);
+        topRow.addView(historyView, new LinearLayout.LayoutParams(0, -2, 1f));
+        card.addView(topRow, new LinearLayout.LayoutParams(-1, -2));
 
         exprView = Ui.text(c, "0", sci ? 28 : 36, Ui.TEXT, false);
         exprView.setGravity(Gravity.END);
@@ -315,6 +337,7 @@ public class CalculatorScreen implements Screen {
             }
             String out = Ui.fmt(v);
             historyView.setText(src + " =");
+            HistoryStore.add(ctx, src, out);
             buf.setLength(0);
             buf.append(out);
             exprView.setText(out);
@@ -324,5 +347,66 @@ public class CalculatorScreen implements Screen {
             previewView.setText("Invalid expression");
             previewView.setTextColor(Ui.DANGER);
         }
+    }
+
+    private void showHistory() {
+        final List<String[]> items = HistoryStore.load(ctx);
+
+        final AlertDialog dialog = new AlertDialog.Builder(ctx)
+                .setTitle("History")
+                .setNegativeButton("Close", null)
+                .create();
+
+        LinearLayout list = Ui.column(ctx, 0);
+        int pad = Ui.dp(ctx, 16);
+        list.setPadding(pad, Ui.dp(ctx, 6), pad, Ui.dp(ctx, 6));
+
+        if (items.isEmpty()) {
+            TextView empty = Ui.text(ctx, "No calculations yet.", 14, Ui.MUTED, false);
+            empty.setPadding(0, Ui.dp(ctx, 18), 0, Ui.dp(ctx, 18));
+            list.addView(empty);
+        } else {
+            for (final String[] item : items) {
+                LinearLayout row = Ui.column(ctx, 0);
+                row.setPadding(Ui.dp(ctx, 8), Ui.dp(ctx, 10), Ui.dp(ctx, 8), Ui.dp(ctx, 10));
+                row.setClickable(true);
+                row.setBackground(Ui.ripple(Ui.SURFACE, Ui.dp(ctx, 10)));
+
+                TextView expression = Ui.text(ctx, item[0], 13, Ui.MUTED, false);
+                expression.setSingleLine(true);
+                TextView value = Ui.text(ctx, "= " + item[1], 17, Ui.TEXT, true);
+                value.setSingleLine(true);
+
+                row.addView(expression);
+                row.addView(value);
+                row.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        buf.setLength(0);
+                        buf.append(item[1]);
+                        refresh();
+                        dialog.dismiss();
+                    }
+                });
+                list.addView(row);
+                list.addView(Ui.divider(ctx));
+            }
+        }
+
+        ScrollView scroller = new ScrollView(ctx);
+        scroller.addView(list, new ScrollView.LayoutParams(-1, -2));
+        dialog.setView(scroller);
+
+        if (!items.isEmpty()) {
+            dialog.setButton(AlertDialog.BUTTON_NEUTRAL, "Clear all",
+                    new android.content.DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(android.content.DialogInterface d, int which) {
+                            HistoryStore.clear(ctx);
+                            historyView.setText("");
+                        }
+                    });
+        }
+        dialog.show();
     }
 }

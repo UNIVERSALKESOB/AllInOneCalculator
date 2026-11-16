@@ -1,7 +1,10 @@
 build/
 out/
+ci-out/
 *.keystore
+*.jks
 *.idsig
+keys/
 .idea/
 *.iml
 .DS_Store
