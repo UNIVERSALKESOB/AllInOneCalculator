@@ -15,7 +15,7 @@ import android.widget.TextView;
 public class MainActivity extends Activity {
 
     private static final String[] TABS = {
-            "Basic", "Scientific", "Units", "Currency", "BMI", "Loan", "Age", "Percent", "Tip", "Discount"
+            "Basic", "Scientific", "Units", "Currency", "BMI", "Loan", "Age", "Percent", "Tip", "Discount", "About"
     };
 
     private final Screen[] cache = new Screen[TABS.length];
@@ -145,7 +145,8 @@ public class MainActivity extends Activity {
                 case 6: cache[i] = new AgeScreen(this); break;
                 case 7: cache[i] = new PercentScreen(this); break;
                 case 8: cache[i] = new TipScreen(this); break;
-                default: cache[i] = new DiscountScreen(this); break;
+                case 9: cache[i] = new DiscountScreen(this); break;
+                default: cache[i] = new AboutScreen(this); break;
             }
         }
         return cache[i];

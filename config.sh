@@ -4,8 +4,8 @@ ANDROID_JAR="${ANDROID_JAR:-$HOME/sdk/android-36/android.jar}"
 BUNDLETOOL_JAR="${BUNDLETOOL_JAR:-$HOME/tools/bundletool.jar}"
 
 APP_NAME="AllInOneCalculator"
-VERSION_NAME="1.2"
-VERSION_CODE="3"
+VERSION_NAME="1.3"
+VERSION_CODE="4"
 MIN_SDK="21"
 TARGET_SDK="36"
 

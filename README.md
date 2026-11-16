@@ -22,6 +22,8 @@ straight `aapt2` + `javac` + `d8` + `apksigner`, packaged for Google Play as an
 History keeps the last 50 calculations on the device; tap an entry to reuse its
 result. Currency rates come from [open.er-api.com](https://open.er-api.com) and
 are stored in `SharedPreferences`, so the currency screen keeps working offline.
+The **About** tab shows the version, publisher (Universal Studio), highlights and
+links to the source code and privacy policy.
 
 ## Project layout
 
@@ -42,6 +44,7 @@ src/com/allinone/calc/
   PercentScreen.java      percentage tools
   TipScreen.java          tip split
   DiscountScreen.java     discount + tax
+  AboutScreen.java        app info, publisher, links
 res/                      theme, colors, launcher icons
 tools/make_icon.py        generates launcher PNGs with zero dependencies
 tools/zipalign.py         aligns stored entries when zipalign is missing
@@ -64,7 +67,24 @@ APK, assembles the base module, runs `bundletool build-bundle`, validates the
 bundle, signs it with `jarsigner`, and finally round-trips it through
 `bundletool build-apks --mode=universal` as a smoke test.
 
-Play Store listing assets live in `store/` (`icon-512.png`).
+Play Store listing assets live in `store/`:
+
+- `store/listing.md` — EN + BN listing copy, category/data-safety suggestions
+- `store/icon-512.png` — 512×512 app icon
+- `store/feature-graphic-1024x500.png` — feature graphic
+- `store/screenshots/01…07-*.png` — 1080×1920 phone screenshots
+
+Regenerate them with `python3 tools/make_store_assets.py` (needs Pillow).
+
+## Privacy policy site
+
+`docs/` is a static site served by GitHub Pages:
+
+- https://universalkesob.github.io/AllInOneCalculator/
+- https://universalkesob.github.io/AllInOneCalculator/privacy-policy.html
+
+Enable Pages for a fork with **Settings → Pages → Source: Deploy from a branch →
+`main` / `/docs`**.
 
 ## Signing
 
