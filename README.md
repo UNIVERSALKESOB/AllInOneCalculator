@@ -1,7 +1,8 @@
 # All-in-One Calculator
 
 A fast, fully offline Android calculator with 10 tools, built without Gradle —
-straight `aapt2` + `javac` + `d8` + `apksigner`.
+straight `aapt2` + `javac` + `d8` + `apksigner`, packaged for Google Play as an
+`.aab` with `bundletool`.
 
 ## Tools
 
@@ -51,12 +52,19 @@ tools/zipalign.py         aligns stored entries when zipalign is missing
 
 ```bash
 pkg install openjdk-17 aapt2 d8 apksigner
-# android.jar is expected at $HOME/sdk/android-34-ext12/android.jar
+# android.jar is expected at $HOME/sdk/android-36/android.jar
 # (override with ANDROID_JAR=/path/to/android.jar)
-bash build.sh
+bash build.sh        # signed APK   -> out/AllInOneCalculator.apk
+bash build_aab.sh    # Play bundle  -> out/AllInOneCalculator.aab
 ```
 
-Output: `out/AllInOneCalculator.apk`.
+`build_aab.sh` needs [bundletool](https://github.com/google/bundletool/releases)
+(`BUNDLETOOL_JAR`, default `~/tools/bundletool.jar`). It builds the proto-format
+APK, assembles the base module, runs `bundletool build-bundle`, validates the
+bundle, signs it with `jarsigner`, and finally round-trips it through
+`bundletool build-apks --mode=universal` as a smoke test.
+
+Play Store listing assets live in `store/` (`icon-512.png`).
 
 ## Signing
 
@@ -67,12 +75,15 @@ one instead of requiring an uninstall.
   (both git-ignored). Missing key/password? The first build generates them.
 - CI: the same keystore is passed through the repository secrets
   `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS` and `KEY_PASSWORD`.
+- The same key is used as the Play upload key. If you enable Play App Signing,
+  keep this keystore as the *upload* key: Play re-signs installs with its own
+  app-signing key.
 - Certificate fingerprint (SHA-256 of the signer):
   `68:3C:33:32:F1:48:E5:0B:01:AC:25:F1:A5:5E:03:FA:36:CF:45:81:13:2D:B8:3A:62:A1:B5:2F:BD:BC:1F:C5`
 
 Keep a backup of `keys/release.jks` + `keys/password.txt`. Losing them means
 future builds must be signed with a new key, which Android treats as a different
-app.
+app (and Play Store will reject the upload).
 
 ## Notes
 

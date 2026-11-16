@@ -3,13 +3,7 @@
 set -e
 
 cd "$(dirname "$0")"
-PROJECT_DIR="$PWD"
-ANDROID_JAR="${ANDROID_JAR:-$HOME/sdk/android-34-ext12/android.jar}"
-APP_NAME="AllInOneCalculator"
-VERSION_NAME="1.1"
-VERSION_CODE="2"
-MIN_SDK="21"
-TARGET_SDK="34"
+source ./config.sh
 
 if [ ! -f "$ANDROID_JAR" ]; then
   echo "android.jar not found at $ANDROID_JAR" >&2
@@ -62,42 +56,7 @@ else
 fi
 
 echo "==> sign"
-KEY_ALIAS="${KEY_ALIAS:-calc}"
-KEYSTORE="${KEYSTORE_PATH:-keys/release.jks}"
-PASS_FILE="keys/password.txt"
-
-if [ -n "${KEYSTORE_BASE64:-}" ]; then
-  mkdir -p build
-  printf '%s' "$KEYSTORE_BASE64" | base64 -d > build/ci-keystore.jks
-  KEYSTORE="build/ci-keystore.jks"
-fi
-
-KEYSTORE_PASSWORD="${KEYSTORE_PASSWORD:-}"
-if [ -z "$KEYSTORE_PASSWORD" ] && [ -f "$PASS_FILE" ]; then
-  KEYSTORE_PASSWORD="$(cat "$PASS_FILE")"
-fi
-
-if [ -z "$KEYSTORE_PASSWORD" ]; then
-  if [ -f "$KEYSTORE" ]; then
-    echo "Keystore exists but password is missing: set KEYSTORE_PASSWORD or create $PASS_FILE" >&2
-    exit 1
-  fi
-  KEYSTORE_PASSWORD="$(head -c 32 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 24)"
-  mkdir -p keys
-  printf '%s' "$KEYSTORE_PASSWORD" > "$PASS_FILE"
-  echo "Generated a new signing password in $PASS_FILE"
-fi
-
-KEY_PASSWORD="${KEY_PASSWORD:-$KEYSTORE_PASSWORD}"
-
-if [ ! -f "$KEYSTORE" ]; then
-  mkdir -p "$(dirname "$KEYSTORE")"
-  keytool -genkeypair -keystore "$KEYSTORE" -alias "$KEY_ALIAS" \
-    -storepass "$KEYSTORE_PASSWORD" -keypass "$KEY_PASSWORD" \
-    -keyalg RSA -keysize 4096 -validity 10950 \
-    -dname "CN=All-in-One Calculator, O=UNIVERSALKESOB, C=BD"
-fi
-
+prepare_signing
 apksigner sign \
   --ks "$KEYSTORE" \
   --ks-key-alias "$KEY_ALIAS" \
@@ -110,6 +69,6 @@ apksigner sign \
   build/aligned.apk
 
 echo "==> verify"
-apksigner verify --print-certs "out/${APP_NAME}.apk" | head -5
+apksigner verify --print-certs "out/${APP_NAME}.apk" | head -3
 ls -lh "out/${APP_NAME}.apk"
-echo "BUILD OK: $PROJECT_DIR/out/${APP_NAME}.apk"
+echo "BUILD OK: $(pwd)/out/${APP_NAME}.apk"

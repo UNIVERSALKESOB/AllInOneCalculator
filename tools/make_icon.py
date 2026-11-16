@@ -147,3 +147,9 @@ for folder, size in variants:
     d = os.path.join(OUT, "mipmap-" + folder)
     os.makedirs(d, exist_ok=True)
     write_png(os.path.join(d, "ic_launcher.png"), size, downsample(size))
+
+# Play Store listing icon (512x512, 32-bit PNG)
+store = os.path.join(os.path.dirname(OUT), "store")
+os.makedirs(store, exist_ok=True)
+write_png(os.path.join(store, "icon-512.png"), 512, downsample(512))
+

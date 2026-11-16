@@ -1,4 +1,4 @@
-name: Build APK
+name: Build APK + AAB
 
 on:
   push:
@@ -8,9 +8,12 @@ on:
 permissions:
   contents: read
 
+env:
+  BUNDLETOOL_VERSION: 1.18.3
+
 jobs:
-  apk:
-    name: Build signed APK
+  build:
+    name: Build signed APK + AAB
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -29,15 +32,16 @@ jobs:
           if [ ! -x "$SDKMANAGER" ]; then
             SDKMANAGER="$(command -v sdkmanager)"
           fi
-          if [ ! -d "$ANDROID_HOME/platforms/android-34" ]; then
-            yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
-            "$SDKMANAGER" "platforms;android-34" "build-tools;34.0.0"
-          fi
-          if [ ! -d "$ANDROID_HOME/build-tools/34.0.0" ]; then
-            "$SDKMANAGER" "build-tools;34.0.0"
-          fi
-          echo "ANDROID_JAR=$ANDROID_HOME/platforms/android-34/android.jar" >> "$GITHUB_ENV"
-          echo "$ANDROID_HOME/build-tools/34.0.0" >> "$GITHUB_PATH"
+          yes | "$SDKMANAGER" --licenses > /dev/null 2>&1 || true
+          "$SDKMANAGER" "platforms;android-36" "build-tools;36.0.0" > /dev/null
+          echo "ANDROID_JAR=$ANDROID_HOME/platforms/android-36/android.jar" >> "$GITHUB_ENV"
+          echo "$ANDROID_HOME/build-tools/36.0.0" >> "$GITHUB_PATH"
+
+      - name: Fetch bundletool
+        run: |
+          curl -sSL -o "$RUNNER_TEMP/bundletool.jar" \
+            "https://github.com/google/bundletool/releases/download/${BUNDLETOOL_VERSION}/bundletool-all-${BUNDLETOOL_VERSION}.jar"
+          test -s "$RUNNER_TEMP/bundletool.jar"
 
       - name: Build APK
         env:
@@ -45,11 +49,28 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
           KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          BUNDLETOOL_JAR: ${{ runner.temp }}/bundletool.jar
         run: bash build.sh
+
+      - name: Build AAB
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+          BUNDLETOOL_JAR: ${{ runner.temp }}/bundletool.jar
+        run: bash build_aab.sh
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: AllInOneCalculator-apk
           path: out/AllInOneCalculator.apk
+          if-no-files-found: error
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: AllInOneCalculator-aab
+          path: out/AllInOneCalculator.aab
           if-no-files-found: error

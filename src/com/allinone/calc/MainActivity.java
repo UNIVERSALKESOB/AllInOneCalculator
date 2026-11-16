@@ -1,9 +1,12 @@
 package com.allinone.calc;
 
 import android.app.Activity;
+import android.graphics.Insets;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.view.WindowInsets;
 import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.LinearLayout;
@@ -29,7 +32,28 @@ public class MainActivity extends Activity {
 
         LinearLayout root = Ui.column(this, 0);
         root.setBackgroundColor(Ui.BG);
-        root.setPadding(0, statusBarHeight(), 0, 0);
+
+        if (Build.VERSION.SDK_INT >= 30) {
+            getWindow().setDecorFitsSystemWindows(false);
+        }
+        root.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+            @Override
+            public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                int top;
+                int bottom;
+                if (Build.VERSION.SDK_INT >= 30) {
+                    Insets bars = insets.getInsets(
+                            WindowInsets.Type.systemBars() | WindowInsets.Type.ime());
+                    top = bars.top;
+                    bottom = bars.bottom;
+                } else {
+                    top = insets.getSystemWindowInsetTop();
+                    bottom = insets.getSystemWindowInsetBottom();
+                }
+                v.setPadding(0, top, 0, bottom);
+                return insets;
+            }
+        });
 
         root.addView(buildHeader());
         root.addView(buildTabs());
@@ -43,11 +67,6 @@ public class MainActivity extends Activity {
 
         setContentView(root);
         select(Math.max(0, Math.min(TABS.length - 1, current)), false);
-    }
-
-    private int statusBarHeight() {
-        int id = getResources().getIdentifier("status_bar_height", "dimen", "android");
-        return id > 0 ? getResources().getDimensionPixelSize(id) : Ui.dp(this, 24);
     }
 
     private View buildHeader() {
