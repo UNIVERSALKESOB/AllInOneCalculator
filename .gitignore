@@ -1,0 +1,7 @@
+build/
+out/
+*.keystore
+*.idsig
+.idea/
+*.iml
+.DS_Store
